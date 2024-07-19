@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    stages {
+        stage('Check Docker installation') {
+            steps {
+                script {
+                    echo 'Checking for Docker...'
+                    sh 'docker ps || (echo "Docker not installed" && exit 1)'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Building...'
+                sh '''
+                echo "Doing build stuff..."
+                '''
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing...'
+                sh '''
+                echo "Doing test stuff..."
+                '''
+            }
+        }
+        stage('Deliver') {
+            steps {
+                echo 'Deliver...'
+                sh '''
+                echo "Doing delivery stuff..."
+                '''
+            }
+        }
+    }
+}

@@ -1,0 +1,95 @@
+---
+services:
+  # Jenkins Server
+  jenkins-server:
+    container_name: jenkins_server
+    build:
+      context: .
+      dockerfile: ./jenkins/jenkins_server
+    image: jenkins:built
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+      - '5000:5000'
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - jenkins-docker-certs:/certs/client:ro
+    depends_on:
+      - jenkins-docker-in-docker
+    networks:
+      - services
+  # Jenkins Docker In Docker
+  jenkins-docker-in-docker:
+    container_name: jenkins_dind
+    build:
+      context: .
+      dockerfile: ./jenkins/jenkins_dind
+    image: jenkins_dind:built
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home
+    networks:
+      services:
+        aliases:
+          - docker
+
+  # Gitlab Server
+  gitlab-server:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    restart: unless-stopped
+    hostname: 'bastion.li-sun.ts.net'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://bastion.li-sun.ts.net'
+    ports:
+      - '80:80'
+      - '443:443'
+      - '2223:22'
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    shm_size: '256m'
+    networks:
+      - services
+
+# Docker Networks
+networks:
+  services:
+    driver: bridge
+
+# Docker Volumes
+volumes:
+  jenkins-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$VOLUME_PATH/jenkins/data'
+  jenkins-docker-certs:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$VOLUME_PATH/jenkins/certs'
+  gitlab-config:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$VOLUME_PATH/gitlab/config'
+  gitlab-logs:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$VOLUME_PATH/gitlab/logs'
+  gitlab-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '$VOLUME_PATH/gitlab/data'
